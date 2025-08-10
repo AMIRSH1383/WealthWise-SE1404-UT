@@ -21,7 +21,7 @@ public class SecurityRepository {
         securityByIsin.clear();
     }
 
-    Iterable<? extends Security> allSecurities() {
+    public Iterable<? extends Security> allSecurities() {
         return securityByIsin.values();
     }
 }

@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.math.BigInteger;
 import java.time.LocalDateTime;
@@ -44,9 +45,9 @@ public class BalanceActionServiceTest {
 
     @Test
     public void noActionsForPortfolio_getBalance_zeroBalanceReturned(){
-        assertEquals(balanceActionService.getBalanceForPortfolio(
+        assertEquals(BigInteger.ZERO, balanceActionService.getBalanceForPortfolio(
                 "21e42b92-cef6-453f-9e52-fa76b1d830f6",
-                LocalDateTime.now()), BigInteger.ZERO);
+                LocalDateTime.now().plusSeconds(1)));
     }
 
     @Test
@@ -64,7 +65,7 @@ public class BalanceActionServiceTest {
                 BigInteger.valueOf(1000),
                 balanceActionService.getBalanceForPortfolio(
                         "21e42b92-cef6-453f-9e52-fa76b1d830f6",
-                        LocalDateTime.now()
+                        LocalDateTime.now().plusSeconds(1)
                 )
         );
         actionRepository.deleteById(deposit.getUuid());
@@ -97,7 +98,7 @@ public class BalanceActionServiceTest {
                 BigInteger.valueOf(1000 - 300),
                 balanceActionService.getBalanceForPortfolio(
                         "21e42b92-cef6-453f-9e52-fa76b1d830f6",
-                        LocalDateTime.now()
+                        LocalDateTime.now().plusSeconds(1)
                 )
         );
         actionRepository.deleteById(buy.getUuid());
@@ -122,7 +123,7 @@ public class BalanceActionServiceTest {
                 BigInteger.valueOf(300),
                 balanceActionService.getBalanceForPortfolio(
                         "21e42b92-cef6-453f-9e52-fa76b1d830f6",
-                        LocalDateTime.now()
+                        LocalDateTime.now().plusSeconds(1)
                 )
         );
         actionRepository.deleteById(sale.getUuid());
@@ -143,7 +144,7 @@ public class BalanceActionServiceTest {
                 BigInteger.valueOf(-1000),
                 balanceActionService.getBalanceForPortfolio(
                         "21e42b92-cef6-453f-9e52-fa76b1d830f6",
-                        LocalDateTime.now()
+                        LocalDateTime.now().plusSeconds(1)
                 )
         );
         actionRepository.deleteById(withdrawal.getUuid());
