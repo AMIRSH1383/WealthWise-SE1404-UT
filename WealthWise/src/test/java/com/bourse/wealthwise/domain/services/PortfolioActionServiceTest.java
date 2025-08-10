@@ -78,7 +78,7 @@ public class PortfolioActionServiceTest {
                 .security(Security.builder().build())
                 .datetime(LocalDateTime.now())
                 .volume(BigInteger.TEN)
-                .price(1)
+                .price(1.0)
                 .totalValue(BigInteger.TEN)
                 .actor(Actor.MANUAL)
                 .build();

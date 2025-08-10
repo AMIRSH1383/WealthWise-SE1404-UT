@@ -16,7 +16,7 @@ import java.util.UUID;
 public class Buy extends BaseAction {
     private final Security security;
     private final BigInteger volume;
-    private final Integer price;
+    private final Double price;
     private final BigInteger totalValue;
 
     @Override

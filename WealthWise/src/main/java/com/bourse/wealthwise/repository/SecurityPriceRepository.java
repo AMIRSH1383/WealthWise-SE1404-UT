@@ -11,16 +11,14 @@ public class SecurityPriceRepository {
 
     private final Map<String, Map<LocalDate, Double>> priceMap = new HashMap<>();
 
-    public void addPrice(String isin, LocalDate date, double price) {
+    public void addPrice(String isin, LocalDate date, Double price) {
         priceMap
                 .computeIfAbsent(isin, k -> new HashMap<>())
                 .put(date, price);
     }
 
-    public Optional<Double> getPrice(String isin, LocalDate date) {
-        return Optional.ofNullable(
-                priceMap.getOrDefault(isin, Collections.emptyMap()).get(date)
-        );
+    public Double getPrice(String isin, LocalDate date) {
+        return priceMap.getOrDefault(isin, Collections.emptyMap()).get(date);
     }
 
     public List<SecurityPrice> getPricesForSecurity(String isin) {

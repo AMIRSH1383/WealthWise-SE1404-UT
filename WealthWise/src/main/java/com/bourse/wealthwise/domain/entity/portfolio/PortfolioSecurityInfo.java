@@ -12,11 +12,12 @@ public class PortfolioSecurityInfo {
 
     private Security security;
     private BigInteger volume;
-    private double value;
-    public PortfolioSecurityInfo(Security security, BigInteger volume, double value){
+    private Double price;
+    private Double value;
+    public PortfolioSecurityInfo(Security security, BigInteger volume, Double price){
         this.security = security;
         this.volume = volume;
-        this.value = value;
+        this.price = price;
     }
 
 

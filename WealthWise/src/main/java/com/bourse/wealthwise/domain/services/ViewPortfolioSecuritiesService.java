@@ -65,8 +65,8 @@ public class ViewPortfolioSecuritiesService {
                     }
 
                     if (newSecurity) {
-                        var value = securityPriceRepository.getPrice(security.getIsin(), LocalDate.from(targetDateTime));
-                        portfolioSecurityInfoList.add(new PortfolioSecurityInfo(security, volumeChange, 0));
+                        var price = securityPriceRepository.getPrice(security.getIsin(), LocalDate.from(targetDateTime)) ;
+                        portfolioSecurityInfoList.add(new PortfolioSecurityInfo(security, volumeChange, price));
                     }
                 }
             }

@@ -21,6 +21,4 @@ public class Security {
 
     private String isin;
 
-
-
 }
