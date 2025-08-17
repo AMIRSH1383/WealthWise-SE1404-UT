@@ -24,6 +24,10 @@ public class ViewPortfolioSecuritiesService {
     private final SecurityPriceRepository securityPriceRepository;
     private final ActionRepository actionRepository;
 
+    private void sortPortfolioSecurityInfo(List<PortfolioSecurityInfo> infoList){
+
+    }
+
     public ViewPortfolioSecuritiesService(
             PortfolioRepository portfolioRepository,
             SecurityPriceRepository securityPriceRepository,
@@ -71,6 +75,13 @@ public class ViewPortfolioSecuritiesService {
                 }
             }
         }
+
+        for (int i = 0; i < portfolioSecurityInfoList.size(); i++){
+            var value = securityPriceRepository.getPrice(portfolioSecurityInfoList.get(i).getSecurity().getIsin(),
+                    LocalDate.from(targetDateTime)) * portfolioSecurityInfoList.get(i).getVolume().doubleValue();
+            portfolioSecurityInfoList.get(i).setValue(value);
+        }
+        portfolioSecurityInfoList.sort((o1, o2) -> o1.getSecurity().getName().compareTo(o2.getSecurity().getName()));
         return portfolioSecurityInfoList;
     }
 }

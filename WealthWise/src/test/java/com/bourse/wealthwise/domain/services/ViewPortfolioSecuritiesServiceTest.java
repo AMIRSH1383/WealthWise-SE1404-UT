@@ -3,10 +3,12 @@ package com.bourse.wealthwise.domain.services;
 import com.bourse.wealthwise.domain.entity.account.User;
 import com.bourse.wealthwise.domain.entity.action.*;
 import com.bourse.wealthwise.domain.entity.portfolio.Portfolio;
+import com.bourse.wealthwise.domain.entity.portfolio.PortfolioSecurityInfo;
 import com.bourse.wealthwise.domain.entity.security.Security;
 import com.bourse.wealthwise.repository.ActionRepository;
 import com.bourse.wealthwise.repository.PortfolioRepository;
 
+import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -22,6 +24,8 @@ import org.springframework.test.annotation.DirtiesContext;
 import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -77,6 +81,8 @@ public class ViewPortfolioSecuritiesServiceTest {
 
     @Test
     public void newBuyActionEnters_getSecuritiesInfo_NewSecurityInfoAdded(){
+        List<PortfolioSecurityInfo> expectedPortfolioSecurities = new ArrayList<>();
+        
         Deposit deposit = Deposit.builder()
                 .uuid(UUID.randomUUID().toString())
                 .portfolio(portfolio)
@@ -98,6 +104,8 @@ public class ViewPortfolioSecuritiesServiceTest {
                 .actionType(ActionType.BUY)
                 .build();
         actionRepository.save(buy);
+        expectedPortfolioSecurities.add(new PortfolioSecurityInfo(security, BigInteger.valueOf(5),
+                securityPriceRepository.getPrice(security.getIsin(), LocalDate.now())));
 
         this.security = securityRepository.findSecurityByIsin("IRO1BMLT0001");
         Buy buy2 = Buy.builder()
@@ -111,16 +119,21 @@ public class ViewPortfolioSecuritiesServiceTest {
                 .actionType(ActionType.BUY)
                 .build();
         actionRepository.save(buy2);
+        expectedPortfolioSecurities.add(new PortfolioSecurityInfo(security, BigInteger.valueOf(6),
+                securityPriceRepository.getPrice(security.getIsin(), LocalDate.now())));
 
-        var portfolioSecurities = portfolioSecuritiesService.getPortfolioSecurities(
+        var actualPortfolioSecurities = portfolioSecuritiesService.getPortfolioSecurities(
                 "21e42b92-cef6-453f-9e52-fa76b1d830f6", LocalDateTime.now().plusSeconds(1));
 
-        for(var securityInfo: portfolioSecurities){
-            System.out.println(securityInfo.getSecurity());
-            System.out.println(securityInfo.getVolume());
-            System.out.println(securityInfo.getPrice() * securityInfo.getVolume().doubleValue());
+        for(int i = 0; i < actualPortfolioSecurities.size(); i++){
+            assertEquals(expectedPortfolioSecurities.get(i).getSecurity(),
+                    actualPortfolioSecurities.get(i).getSecurity());
+            assertEquals(expectedPortfolioSecurities.get(i).getVolume(),
+                    actualPortfolioSecurities.get(i).getVolume());
+            assertEquals(
+                    expectedPortfolioSecurities.get(i).getPrice() * expectedPortfolioSecurities.get(i).getVolume().doubleValue(),
+                    actualPortfolioSecurities.get(i).getValue());
         }
-
         actionRepository.deleteById(buy.getUuid());
         actionRepository.deleteById(buy2.getUuid());
         actionRepository.deleteById(deposit.getUuid());
