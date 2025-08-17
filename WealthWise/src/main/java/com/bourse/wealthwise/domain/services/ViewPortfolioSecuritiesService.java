@@ -82,6 +82,7 @@ public class ViewPortfolioSecuritiesService {
             portfolioSecurityInfoList.get(i).setValue(value);
         }
         portfolioSecurityInfoList.sort((o1, o2) -> o1.getSecurity().getName().compareTo(o2.getSecurity().getName()));
+        portfolioSecurityInfoList.removeIf(info -> info.getVolume().equals(BigInteger.ZERO)); // Remove zero volumes
         return portfolioSecurityInfoList;
     }
 }
