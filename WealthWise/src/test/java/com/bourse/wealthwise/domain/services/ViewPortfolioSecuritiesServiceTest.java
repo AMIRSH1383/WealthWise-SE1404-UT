@@ -290,5 +290,6 @@ public class ViewPortfolioSecuritiesServiceTest {
         actionRepository.deleteById(buy.getUuid());
         actionRepository.deleteById(buy2.getUuid());
         actionRepository.deleteById(deposit.getUuid());
+        //check
     }
 }
