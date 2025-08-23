@@ -1,11 +1,6 @@
 package com.bourse.wealthwise.domain.entity.action.utils;
 
-import com.bourse.wealthwise.domain.entity.action.Buy;
-import com.bourse.wealthwise.domain.entity.action.Sale;
-import com.bourse.wealthwise.domain.entity.action.Withdrawal;
-import com.bourse.wealthwise.domain.entity.action.Deposit;
-
-
+import com.bourse.wealthwise.domain.entity.action.*;
 
 
 import java.time.format.DateTimeFormatter;
@@ -46,5 +41,10 @@ public class ActionDescriptionVisitor implements ActionVisitor {
         return String.format("[%s] Withdrew amount: %s",
                 withdrawal.getDatetime().format(formatter),
                 withdrawal.getAmount());
+    }
+
+    @Override
+    public String visit(CapitalRaise capitalRaise) {
+        return "Capital raise !";
     }
 }

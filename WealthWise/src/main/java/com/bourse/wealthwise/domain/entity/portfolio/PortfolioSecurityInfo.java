@@ -9,7 +9,6 @@ import java.math.BigInteger;
 @Setter
 public class PortfolioSecurityInfo {
     // Getters and setters
-
     private Security security;
     private BigInteger volume;
     private Double price;
@@ -19,6 +18,4 @@ public class PortfolioSecurityInfo {
         this.volume = volume;
         this.price = price;
     }
-
-
 }
