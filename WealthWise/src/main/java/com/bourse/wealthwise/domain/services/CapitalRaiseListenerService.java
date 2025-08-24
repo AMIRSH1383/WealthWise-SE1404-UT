@@ -1,10 +1,16 @@
 package com.bourse.wealthwise.domain.services;
 
 import com.bourse.wealthwise.domain.entity.DTOs.CapitalRaiseData;
+import com.bourse.wealthwise.domain.entity.security.Security;
+import com.bourse.wealthwise.domain.entity.security.SecurityType;
+import com.bourse.wealthwise.repository.SecurityPriceRepository;
+import com.bourse.wealthwise.repository.SecurityRepository;
 import lombok.Getter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +20,11 @@ import java.util.regex.Pattern;
 @Service
 @Getter
 public class CapitalRaiseListenerService {
+    @Autowired
+    private SecurityRepository securityRepository;
+    @Autowired
+    private SecurityPriceRepository securityPriceRepository;
+
     private List<CapitalRaiseData> capitalRaiseDataList = new ArrayList<>();
     public static final String IN_QUEUE = "CapitalRaiseQueue";
 
@@ -76,6 +87,15 @@ public class CapitalRaiseListenerService {
         capitalRaiseDataList.add(
                 new CapitalRaiseData(symbol, ratio)
         );
+        Security stockSecurity = securityRepository.getSecurityBySymbol(symbol);
+        Security stockRightSecurity = Security.builder()
+                .name("H" + stockSecurity.getName())
+                .symbol("H" + symbol)
+                .isin("H" + stockSecurity.getIsin())
+                .securityType(SecurityType.STOCK_RIGHT)
+                .build();
+        securityRepository.addSecurity(stockRightSecurity);
+        securityPriceRepository.addPrice(stockRightSecurity.getIsin(), LocalDate.from(LocalDateTime.now()), 100.0);
         System.out.printf("New capital raise for: %s, with ratio of %f!\n", symbol, ratio);
         System.out.println(capitalRaiseDataList.size());
     }

@@ -24,4 +24,12 @@ public class SecurityRepository {
     public Iterable<? extends Security> allSecurities() {
         return securityByIsin.values();
     }
+    public Security getSecurityBySymbol(String symbol){
+        for(var security: securityByIsin.values()){
+            if(security.getSymbol().equals(symbol)){
+                return security;
+            }
+        }
+        return null;
+    }
 }
