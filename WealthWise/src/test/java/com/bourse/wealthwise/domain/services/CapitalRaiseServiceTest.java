@@ -81,7 +81,6 @@ public class CapitalRaiseServiceTest {
 
         portfolioRepository.save(portfolio);
     }
-
     @Test //1
     void capitalRaiseMessageCome_getCapitalRaiseData_CapitalRaiseDataReadCorrectly() {
         String msg = "CAPITAL_RAISE IKCQ1 0.5";
@@ -96,9 +95,8 @@ public class CapitalRaiseServiceTest {
                     .isEqualTo(0.5);
         });
     }
-
     @Test //2
-    public void newBuyActionAndCapitalRaiseEntered_getSecuritiesInfo_NewSecurityInfoAdded(){
+    public void capitalRaiseForBoughtStockEnters_getSecuritiesInfo_NewStockRightSecurityAdded(){
         List<PortfolioSecurityInfo> expectedPortfolioSecurities = new ArrayList<>();
 
         Deposit deposit = Deposit.builder()
@@ -143,7 +141,7 @@ public class CapitalRaiseServiceTest {
         // Artemis send message
         String msg = "CAPITAL_RAISE IKCQ1 0.5";
         jmsTemplate.convertAndSend(CapitalRaiseListenerService.IN_QUEUE, msg);
-        await().atMost(5, TimeUnit.SECONDS);
+        await().atLeast(4, TimeUnit.SECONDS);
 
         CapitalRaiseData capitalRaiseData = listenerService.getCapitalRaiseDataList().getFirst();
         Security stockRightSecurity = securityRepository.getSecurityBySymbol("H" + capitalRaiseData.getSecuritySymbol());
@@ -152,13 +150,13 @@ public class CapitalRaiseServiceTest {
                 .portfolio(portfolio)
                 .datetime(LocalDateTime.now())
                 .HSecurity(stockRightSecurity)
-                .securityCurrentVolume(BigInteger.valueOf(6))
+                .securityCurrentVolume(BigInteger.valueOf(5))
                 .stockRightAmountPerShare(capitalRaiseData.getStockRightAmountPerShare())
                 .actionType(ActionType.CAPITAL_RAISE)
                 .build();
         actionRepository.save(capitalRaise);
 
-        var stockRightVolume = capitalRaise.getStockRightAmountPerShare() * 6.0;
+        var stockRightVolume = capitalRaise.getStockRightAmountPerShare() * 5.0;
         expectedPortfolioSecurities.add(new PortfolioSecurityInfo(stockRightSecurity,
                 BigInteger.valueOf((long) stockRightVolume),
                 securityPriceRepository.getPrice(stockRightSecurity.getIsin(), LocalDate.now())));
@@ -175,9 +173,73 @@ public class CapitalRaiseServiceTest {
             assertEquals(
                     expectedPortfolioSecurities.get(i).getPrice() * expectedPortfolioSecurities.get(i).getVolume().doubleValue(),
                     actualPortfolioSecurities.get(i).getValue());
+
         }
         actionRepository.deleteById(buy.getUuid());
         actionRepository.deleteById(buy2.getUuid());
+        actionRepository.deleteById(deposit.getUuid());
+        actionRepository.deleteById(capitalRaise.getUuid());
+    }
+    @Test //3
+    public void capitalRaiseForNotPurchasedStockEnters_getSecuritiesInfo_NoNewStockRightSecurityAdded(){
+        List<PortfolioSecurityInfo> expectedPortfolioSecurities = new ArrayList<>();
+
+        Deposit deposit = Deposit.builder()
+                .uuid(UUID.randomUUID().toString())
+                .portfolio(portfolio)
+                .datetime(LocalDateTime.now())
+                .amount(BigInteger.valueOf(1000))
+                .actionType(ActionType.DEPOSIT)
+                .build();
+        actionRepository.save(deposit);
+
+        this.security = securityRepository.findSecurityByIsin("IRB5IKCO8751");
+        Buy buy = Buy.builder()
+                .uuid(UUID.randomUUID().toString())
+                .portfolio(portfolio)
+                .datetime(LocalDateTime.now())
+                .volume(BigInteger.valueOf(5))
+                .price(securityPriceRepository.getPrice(security.getIsin(), LocalDate.now()))
+                .totalValue(BigInteger.valueOf((long) (5 * securityPriceRepository.getPrice(security.getIsin(), LocalDate.now()))))
+                .security(security)
+                .actionType(ActionType.BUY)
+                .build();
+        actionRepository.save(buy);
+        expectedPortfolioSecurities.add(new PortfolioSecurityInfo(security, BigInteger.valueOf(5),
+                securityPriceRepository.getPrice(security.getIsin(), LocalDate.now())));
+
+        // Artemis send message
+        String msg = "CAPITAL_RAISE BMLT1 0.7";
+        jmsTemplate.convertAndSend(CapitalRaiseListenerService.IN_QUEUE, msg);
+        await().atLeast(5, TimeUnit.SECONDS);
+
+        CapitalRaiseData capitalRaiseData = listenerService.getCapitalRaiseDataList().getFirst();
+        Security stockRightSecurity = securityRepository.getSecurityBySymbol("H" + capitalRaiseData.getSecuritySymbol());
+        CapitalRaise capitalRaise = CapitalRaise.builder()
+                .uuid(UUID.randomUUID().toString())
+                .portfolio(portfolio)
+                .datetime(LocalDateTime.now())
+                .HSecurity(stockRightSecurity)
+                .securityCurrentVolume(BigInteger.valueOf(0))
+                .stockRightAmountPerShare(capitalRaiseData.getStockRightAmountPerShare())
+                .actionType(ActionType.CAPITAL_RAISE)
+                .build();
+        actionRepository.save(capitalRaise);
+
+        var actualPortfolioSecurities = portfolioSecuritiesService.getPortfolioSecurities(
+                "21e42b92-cef6-453f-9e52-fa76b1d830f6", LocalDateTime.now().plusSeconds(1));
+
+        expectedPortfolioSecurities.sort((o1, o2) -> o1.getSecurity().getName().compareTo(o2.getSecurity().getName()));
+        for(int i = 0; i < actualPortfolioSecurities.size(); i++){
+            assertEquals(expectedPortfolioSecurities.get(i).getSecurity(),
+                    actualPortfolioSecurities.get(i).getSecurity());
+            assertEquals(expectedPortfolioSecurities.get(i).getVolume(),
+                    actualPortfolioSecurities.get(i).getVolume());
+            assertEquals(
+                    expectedPortfolioSecurities.get(i).getPrice() * expectedPortfolioSecurities.get(i).getVolume().doubleValue(),
+                    actualPortfolioSecurities.get(i).getValue());
+        }
+        actionRepository.deleteById(buy.getUuid());
         actionRepository.deleteById(deposit.getUuid());
         actionRepository.deleteById(capitalRaise.getUuid());
     }

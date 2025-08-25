@@ -7,7 +7,6 @@ import org.springframework.jms.annotation.EnableJms;
 @SpringBootApplication
 @EnableJms
 public class WealthWiseApplication {
-
     public static void main(String[] args) {
         SpringApplication.run(WealthWiseApplication.class, args);
     }
