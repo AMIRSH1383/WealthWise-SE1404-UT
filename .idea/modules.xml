@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/WealthWise/WealthWise.iml" filepath="$PROJECT_DIR$/WealthWise/WealthWise.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/WealthWise-SE1404-UT.iml" filepath="$PROJECT_DIR$/.idea/WealthWise-SE1404-UT.iml" />
     </modules>
   </component>
