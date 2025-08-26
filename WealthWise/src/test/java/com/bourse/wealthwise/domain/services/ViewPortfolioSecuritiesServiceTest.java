@@ -78,7 +78,6 @@ public class ViewPortfolioSecuritiesServiceTest {
                 "21e42b92-cef6-453f-9e52-fa76b1d830f6",
                 LocalDateTime.now().plusSeconds(1)).isEmpty());
     }
-
     @Test //2
     public void newBuyActionEnters_getSecuritiesInfo_NewSecurityInfoAdded(){
         List<PortfolioSecurityInfo> expectedPortfolioSecurities = new ArrayList<>();
@@ -214,7 +213,6 @@ public class ViewPortfolioSecuritiesServiceTest {
         actionRepository.deleteById(buy2.getUuid());
         actionRepository.deleteById(deposit.getUuid());
     }
-
     @Test //4
     public void oneSecuritySoldOut_getSecuritiesInfo_oneSecurityLeft(){
         List<PortfolioSecurityInfo> expectedPortfolioSecurities = new ArrayList<>();

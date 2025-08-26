@@ -10,4 +10,6 @@ public interface ActionVisitor {
     String visit(Withdrawal withdrawal);
 
     String visit(CapitalRaise capitalRaise);
+
+    String visit(StockRightUsage stockRightUsage);
 }

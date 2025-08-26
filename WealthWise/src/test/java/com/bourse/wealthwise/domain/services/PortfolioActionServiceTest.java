@@ -87,7 +87,7 @@ public class PortfolioActionServiceTest {
 
         assertEquals(portfolioActionService.getActionsForPortfolio(
                         "23e42b92-cef6-453f-9e52-fa76b1d830f6",
-                        LocalDateTime.now().plusSeconds(1)),
+                        LocalDateTime.now().plusSeconds(4)),
                 List.of(buy.accept(visitor)));
     }
 }

@@ -51,25 +51,52 @@ public class ViewPortfolioSecuritiesService {
             }
         }
 
-        if(targetDataPortfolioActions != null) {
-            for (BaseAction validAction : Objects.requireNonNull(targetDataPortfolioActions)) {
-                var securityChangeList = validAction.getSecurityChanges();
-                if (securityChangeList.size() == 1) {
-                    Security security = securityChangeList.get(0).getSecurity();
-                    BigInteger volumeChange = securityChangeList.get(0).getVolumeChange();
+//        if(targetDataPortfolioActions != null) {
+//            for (BaseAction validAction : Objects.requireNonNull(targetDataPortfolioActions)) {
+//                var securityChangeList = validAction.getSecurityChanges();
+//                if (securityChangeList.size() == 1) {
+//                    Security security = securityChangeList.get(0).getSecurity();
+//                    BigInteger volumeChange = securityChangeList.get(0).getVolumeChange();
+//
+//                    boolean newSecurity = true;
+//                    for (int i = 0; i < Objects.requireNonNull(portfolioSecurityInfoList).size(); i++) {
+//                        if (portfolioSecurityInfoList.get(i).getSecurity().equals(security)) {
+//                            BigInteger volume = portfolioSecurityInfoList.get(i).getVolume().add(volumeChange);
+//                            portfolioSecurityInfoList.get(i).setVolume(volume);
+//                            newSecurity = false;
+//                            break;
+//                        }
+//                    }
+//
+//                    if (newSecurity) {
+//                        var price = securityPriceRepository.getPrice(security.getIsin(), LocalDate.from(targetDateTime)) ;
+//                        portfolioSecurityInfoList.add(new PortfolioSecurityInfo(security, volumeChange, price));
+//                    }
+//                }
+//            }
+//        }
 
-                    boolean newSecurity = true;
-                    for (int i = 0; i < Objects.requireNonNull(portfolioSecurityInfoList).size(); i++) {
-                        if (portfolioSecurityInfoList.get(i).getSecurity().equals(security)) {
-                            BigInteger volume = portfolioSecurityInfoList.get(i).getVolume().add(volumeChange);
-                            portfolioSecurityInfoList.get(i).setVolume(volume);
-                            newSecurity = false;
+        // Aggregate all security changes for valid actions.  Some actions (e.g., CapitalRaise, StockRightUsage)
+        // may emit multiple SecurityChange events.  We should apply each change individually to the holdings.
+        if (targetDataPortfolioActions != null) {
+            for (BaseAction validAction : targetDataPortfolioActions) {
+                List<SecurityChange> securityChangeList = validAction.getSecurityChanges();
+                for (SecurityChange sc : securityChangeList) {
+                    Security security = sc.getSecurity();
+                    BigInteger volumeChange = sc.getVolumeChange();
+
+                    // Try to find existing PortfolioSecurityInfo for this security and update its volume
+                    boolean found = false;
+                    for (PortfolioSecurityInfo info : portfolioSecurityInfoList) {
+                        if (info.getSecurity().equals(security)) {
+                            info.setVolume(info.getVolume().add(volumeChange));
+                            found = true;
                             break;
                         }
                     }
-
-                    if (newSecurity) {
-                        var price = securityPriceRepository.getPrice(security.getIsin(), LocalDate.from(targetDateTime)) ;
+                    // If not found, create a new entry with the current price
+                    if (!found) {
+                        double price = securityPriceRepository.getPrice(security.getIsin(), LocalDate.from(targetDateTime));
                         portfolioSecurityInfoList.add(new PortfolioSecurityInfo(security, volumeChange, price));
                     }
                 }

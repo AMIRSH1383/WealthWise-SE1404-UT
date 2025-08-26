@@ -11,7 +11,7 @@ public class ActionDescriptionVisitor implements ActionVisitor {
 
     @Override
     public String visit(Buy buy) {
-        return String.format("[%s] Bought %s of %s @ %d/unit (Total: %s)",
+        return String.format("[%s] Bought %s of %s @ %f/unit (Total: %s)",
                 buy.getDatetime().format(formatter),
                 buy.getVolume(),
                 buy.getSecurity().getSymbol(),
@@ -21,7 +21,7 @@ public class ActionDescriptionVisitor implements ActionVisitor {
 
     @Override
     public String visit(Sale sale) {
-        return String.format("[%s] Sold %s of %s @ %d/unit (Total: %s)",
+        return String.format("[%s] Sold %s of %s @ %f/unit (Total: %s)",
                 sale.getDatetime().format(formatter),
                 sale.getVolume(),
                 sale.getSecurity().getSymbol(),
@@ -46,5 +46,10 @@ public class ActionDescriptionVisitor implements ActionVisitor {
     @Override
     public String visit(CapitalRaise capitalRaise) {
         return "Capital raise !";
+    }
+
+    @Override
+    public String visit(StockRightUsage stockRightUsage) {
+        return "Stock right usage";
     }
 }
