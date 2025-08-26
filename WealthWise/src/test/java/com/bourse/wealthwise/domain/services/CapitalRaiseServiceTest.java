@@ -63,7 +63,6 @@ public class CapitalRaiseServiceTest {
         securityRepository.addSecurity(security);
         securityPriceRepository.addPrice(security.getIsin(), LocalDate.from(LocalDateTime.now()), initial_price);
     }
-
     @BeforeEach
     public void setUp() {
         User user = User.builder()
@@ -96,7 +95,7 @@ public class CapitalRaiseServiceTest {
         });
     }
     @Test //2
-    public void capitalRaiseForBoughtStockEnters_getSecuritiesInfo_NewStockRightSecurityAdded(){
+    public void capitalRaiseForBoughtStockEnters_getSecuritiesInfo_NewStockRightSecurityAdded() throws InterruptedException {
         List<PortfolioSecurityInfo> expectedPortfolioSecurities = new ArrayList<>();
 
         Deposit deposit = Deposit.builder()
@@ -141,7 +140,8 @@ public class CapitalRaiseServiceTest {
         // Artemis send message
         String msg = "CAPITAL_RAISE IKCQ1 0.5";
         jmsTemplate.convertAndSend(CapitalRaiseListenerService.IN_QUEUE, msg);
-        await().atLeast(4, TimeUnit.SECONDS);
+        await().atMost(4, TimeUnit.SECONDS);
+        Thread.sleep(4000); // 4000 ms = 4 seconds
 
         CapitalRaiseData capitalRaiseData = listenerService.getCapitalRaiseDataList().getFirst();
         Security stockRightSecurity = securityRepository.getSecurityBySymbol("H" + capitalRaiseData.getSecuritySymbol());
@@ -242,5 +242,117 @@ public class CapitalRaiseServiceTest {
         actionRepository.deleteById(buy.getUuid());
         actionRepository.deleteById(deposit.getUuid());
         actionRepository.deleteById(capitalRaise.getUuid());
+    }
+    @Test //4
+    public void capitalRaiseForMultipleStocksEnter_getSecurityInfo_TwoNewStockRightsAdded() throws InterruptedException {
+        List<PortfolioSecurityInfo> expectedPortfolioSecurities = new ArrayList<>();
+
+        Deposit deposit = Deposit.builder()
+                .uuid(UUID.randomUUID().toString())
+                .portfolio(portfolio)
+                .datetime(LocalDateTime.now())
+                .amount(BigInteger.valueOf(1000))
+                .actionType(ActionType.DEPOSIT)
+                .build();
+        actionRepository.save(deposit);
+
+        this.security = securityRepository.findSecurityByIsin("IRB5IKCO8751");
+        Buy buy = Buy.builder()
+                .uuid(UUID.randomUUID().toString())
+                .portfolio(portfolio)
+                .datetime(LocalDateTime.now())
+                .volume(BigInteger.valueOf(5))
+                .price(securityPriceRepository.getPrice(security.getIsin(), LocalDate.now()))
+                .totalValue(BigInteger.valueOf((long) (5 * securityPriceRepository.getPrice(security.getIsin(), LocalDate.now()))))
+                .security(security)
+                .actionType(ActionType.BUY)
+                .build();
+        actionRepository.save(buy);
+        expectedPortfolioSecurities.add(new PortfolioSecurityInfo(security, BigInteger.valueOf(5),
+                securityPriceRepository.getPrice(security.getIsin(), LocalDate.now())));
+
+        this.security = securityRepository.findSecurityByIsin("IRO1BMLT0001");
+        Buy buy2 = Buy.builder()
+                .uuid(UUID.randomUUID().toString())
+                .portfolio(portfolio)
+                .datetime(LocalDateTime.now())
+                .volume(BigInteger.valueOf(6))
+                .price(securityPriceRepository.getPrice(security.getIsin(), LocalDate.now()))
+                .totalValue(BigInteger.valueOf((long) (6 * securityPriceRepository.getPrice(security.getIsin(), LocalDate.now()))))
+                .security(security)
+                .actionType(ActionType.BUY)
+                .build();
+        actionRepository.save(buy2);
+        expectedPortfolioSecurities.add(new PortfolioSecurityInfo(security, BigInteger.valueOf(6),
+                securityPriceRepository.getPrice(security.getIsin(), LocalDate.now())));
+
+        // Artemis send message
+        String msg = "CAPITAL_RAISE IKCQ1 0.5";
+        jmsTemplate.convertAndSend(CapitalRaiseListenerService.IN_QUEUE, msg);
+        await().atMost(5, TimeUnit.SECONDS);
+        Thread.sleep(4000); // 4000 ms = 4 seconds
+
+        CapitalRaiseData capitalRaiseData = listenerService.getCapitalRaiseDataList().getFirst();
+        Security stockRightSecurity = securityRepository.getSecurityBySymbol("H" + capitalRaiseData.getSecuritySymbol());
+        CapitalRaise capitalRaise = CapitalRaise.builder()
+                .uuid(UUID.randomUUID().toString())
+                .portfolio(portfolio)
+                .datetime(LocalDateTime.now())
+                .HSecurity(stockRightSecurity)
+                .securityCurrentVolume(BigInteger.valueOf(5))
+                .stockRightAmountPerShare(capitalRaiseData.getStockRightAmountPerShare())
+                .actionType(ActionType.CAPITAL_RAISE)
+                .build();
+        actionRepository.save(capitalRaise);
+
+        var stockRightVolume = capitalRaise.getStockRightAmountPerShare() * 5.0;
+        expectedPortfolioSecurities.add(new PortfolioSecurityInfo(stockRightSecurity,
+                BigInteger.valueOf((long) stockRightVolume),
+                securityPriceRepository.getPrice(stockRightSecurity.getIsin(), LocalDate.now())));
+        listenerService.getCapitalRaiseDataList().clear();
+
+        // Artemis send message
+        String msg2 = "CAPITAL_RAISE BMLT1 0.8";
+        jmsTemplate.convertAndSend(CapitalRaiseListenerService.IN_QUEUE, msg);
+        await().atMost(5, TimeUnit.SECONDS);
+        Thread.sleep(4000); // 4000 ms = 4 seconds
+
+        CapitalRaiseData capitalRaiseData2 = listenerService.getCapitalRaiseDataList().getFirst();
+        Security stockRightSecurity2 = securityRepository.getSecurityBySymbol("H" + capitalRaiseData2.getSecuritySymbol());
+        CapitalRaise capitalRaise2 = CapitalRaise.builder()
+                .uuid(UUID.randomUUID().toString())
+                .portfolio(portfolio)
+                .datetime(LocalDateTime.now())
+                .HSecurity(stockRightSecurity2)
+                .securityCurrentVolume(BigInteger.valueOf(6))
+                .stockRightAmountPerShare(capitalRaiseData2.getStockRightAmountPerShare())
+                .actionType(ActionType.CAPITAL_RAISE)
+                .build();
+        actionRepository.save(capitalRaise2);
+
+        var stockRightVolume2 = capitalRaise2.getStockRightAmountPerShare() * 6.0;
+        expectedPortfolioSecurities.add(new PortfolioSecurityInfo(stockRightSecurity2,
+                BigInteger.valueOf((long) stockRightVolume2),
+                securityPriceRepository.getPrice(stockRightSecurity2.getIsin(), LocalDate.now())));
+
+        var actualPortfolioSecurities = portfolioSecuritiesService.getPortfolioSecurities(
+                "21e42b92-cef6-453f-9e52-fa76b1d830f6", LocalDateTime.now().plusSeconds(1));
+
+        expectedPortfolioSecurities.sort((o1, o2) -> o1.getSecurity().getName().compareTo(o2.getSecurity().getName()));
+        for(int i = 0; i < actualPortfolioSecurities.size(); i++){
+            assertEquals(expectedPortfolioSecurities.get(i).getSecurity(),
+                    actualPortfolioSecurities.get(i).getSecurity());
+            assertEquals(expectedPortfolioSecurities.get(i).getVolume(),
+                    actualPortfolioSecurities.get(i).getVolume());
+            assertEquals(
+                    expectedPortfolioSecurities.get(i).getPrice() * expectedPortfolioSecurities.get(i).getVolume().doubleValue(),
+                    actualPortfolioSecurities.get(i).getValue());
+
+        }
+        actionRepository.deleteById(buy.getUuid());
+        actionRepository.deleteById(buy2.getUuid());
+        actionRepository.deleteById(deposit.getUuid());
+        actionRepository.deleteById(capitalRaise.getUuid());
+        actionRepository.deleteById(capitalRaise2.getUuid());
     }
 }
